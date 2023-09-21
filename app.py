@@ -40,6 +40,7 @@
  """
 
 import sys
+import threading
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -47,6 +48,7 @@ from PyQt5.QtCore import *
 import subprocess
 from qt_material import *
 from attack.ARP_SPOOFING_attack import SofiaArpSpoofAttack
+from attack.DNS_SPOOFING import SofiaDnsSpoofingAttack
 
 class SofiaCyberTestSingleton:
    def __new__(cls):
@@ -55,6 +57,8 @@ class SofiaCyberTestSingleton:
     return cls.instance
 
    def __init__(self) -> None:
+
+      self.arp_attack_loop = True
 
       self.log = "Cliquez sur n'importe quel bouton pour détecter l'attaque ou pour lancer l'attaque."
       self.app = QApplication(sys.argv)
@@ -170,6 +174,12 @@ class SofiaCyberTestSingleton:
       self.widget.setFixedWidth(1280)
       self.widget.setFixedHeight(700)
 
+      # Define attacks
+      self.arp_attack = SofiaArpSpoofAttack(self.append_log, True)
+      self.hostDict = {b"google.com.": "192.168.56.1", b"facebook.com.": "192.168.56.1"}
+      self.queueNum = 1
+      self.dns_attack = SofiaDnsSpoofingAttack(self.hostDict, self.queueNum, self.append_log)
+
    def refresh(self):
       self.app.processEvents()
 
@@ -182,14 +192,22 @@ class SofiaCyberTestSingleton:
       sys.exit(self.app.exec_())
 
    def dns_spoofing_attack(self):
-      print("START DNS SPOOFING")
-      cmd = "python3 ./DNS_SPOOFING_attack.py"
-      log=subprocess.run(cmd, shell=True)
-      cmd=subprocess.Popen('python3 ./attack/DNS_SPOOFING_attack.py', shell=True, stdout=subprocess.PIPE, )
-      log=cmd.communicate()[0]
-      log=log.decode("utf-8")
-      print(log)
-      terminal.setText(log)
+      import time
+      if self.attack_dns_spoofing.text() == "DNS SPOOFING":
+         if self.attack_arp_spoofing.text() != "STOP":
+            self.append_log("You need to start ARP attack first !")
+         else:
+            self.attack_dns_spoofing.setText("STOP")
+            self.append_log("[+] Starting ARP Spoofing attack for MITM ..")
+            self.dns_attack.run()
+            #threading.Thread(target=self.dns_attack.run(), args=()).start()
+
+      elif self.attack_dns_spoofing.text() == "STOP":
+         self.append_log("Stopping DNS attack ......")
+         self.attack_dns_spoofing.setText("DNS SPOOFING")
+         # Stop ARP first
+         self.arp_attack.stop()
+         # Stop DNS
 
    def dns_spoofing_detection(self):
       print("START DNS SPOOFING")
@@ -202,15 +220,15 @@ class SofiaCyberTestSingleton:
       terminal.setText(log)
       
    def arp_spoofing_attack(self):
-      #cmd = "python3 ./ARP_SPOOFING_attack.py"
-      #cmd=subprocess.Popen('python3 ./attack/ARP_SPOOFING_attack.py', shell=True, stdout=subprocess.PIPE, )
-      #log=cmd.communicate()[0]
-      #log=log.decode("utf-8")
-      #terminal.setText(log)
-      #arp_run(terminal)
-      self.terminal.clear()
-      arp_attack = SofiaArpSpoofAttack(self.append_log)
-      arp_attack.run()
+      if self.attack_arp_spoofing.text() == "ARP SPOOFING":
+         self.arp_attack.set_loop(True)
+         self.attack_arp_spoofing.setText("STOP")
+         self.terminal.clear()
+         threading.Thread(target=self.arp_attack.run(), args=()).start()
+
+      elif self.attack_arp_spoofing.text() == "STOP":
+         self.attack_arp_spoofing.setText("ARP SPOOFING")
+         self.arp_attack.stop()
 
    def arp_spoofing_detection(self):
       print("START DNS SPOOFING")
