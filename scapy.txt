@@ -1,0 +1,7 @@
+Scapy est un puissant programme interactif de manipulation de paquets basé sur Python et bibliothèque.
+
+Il est capable de forger ou de décoder des paquets d'un grand nombre de protocoles, de les envoyer sur le fil, les capturer, les stocker ou les lire à l'aide de fichiers pcap, faire correspondre les demandes et des réponses, et bien plus encore. Il est conçu pour permettre le prototypage rapide de paquets en en utilisant des valeurs par défaut qui fonctionnent.
+
+Il peut facilement gérer la plupart des tâches classiques telles que la numérisation, le traçage, le sondage, tests unitaires, attaques ou découverte de réseau (il peut remplacer hping, 85% des nmap, arpspoof, arp-sk, arping, tcpdump, wireshark, p0f, etc.). Ça aussi fonctionne très bien dans de nombreuses autres tâches spécifiques que la plupart des autres outils ne peuvent pas gérer, comme envoyer des trames invalides, injecter vos propres trames 802.11, combiner techniques (VLAN hopping+ARP cache poisoning, décodage VoIP sur WEP protégé chaîne, ...), etc.
+
+Scapy prend en charge Python 2.7 et Python 3 (3.4 à 3.9). Il est destiné à être multiplateforme et fonctionne sur de nombreuses plateformes différentes (Linux, OSX, *BSD et Windows). 
