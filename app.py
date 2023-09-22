@@ -50,15 +50,21 @@ from qt_material import *
 from attack.ARP_SPOOFING_attack import SofiaArpSpoofAttack
 from attack.DNS_SPOOFING import SofiaDnsSpoofingAttack
 
-class SofiaCyberTestSingleton:
-   def __new__(cls):
-    if not hasattr(cls, 'instance'):
-      cls.instance = super(SofiaCyberTestSingleton, cls).__new__(cls)
-    return cls.instance
+class WorkerRunnable(QRunnable):
+    def __init__(self, worker):
+        super().__init__()
+        self.worker = worker
 
+    def run(self):
+        self.worker.finished.connect(self.on_finished)
+        self.worker.run()
+
+    def on_finished(self):
+        self.worker.finished.disconnect(self.on_finished)
+        self.worker = None
+
+class SofiaCyberTest:
    def __init__(self) -> None:
-
-      self.arp_attack_loop = True
 
       self.log = "Cliquez sur n'importe quel bouton pour détecter l'attaque ou pour lancer l'attaque."
       self.app = QApplication(sys.argv)
@@ -175,7 +181,9 @@ class SofiaCyberTestSingleton:
       self.widget.setFixedHeight(700)
 
       # Define attacks
-      self.arp_attack = SofiaArpSpoofAttack(self.append_log, True)
+      self.threadpool = QThreadPool()
+      self.arp_attack_worker = None
+
       self.hostDict = {b"google.com.": "192.168.56.1", b"facebook.com.": "192.168.56.1"}
       self.queueNum = 1
       self.dns_attack = SofiaDnsSpoofingAttack(self.hostDict, self.queueNum, self.append_log)
@@ -218,17 +226,32 @@ class SofiaCyberTestSingleton:
       log=log.decode("utf-8")
       print(log)
       terminal.setText(log)
-      
-   def arp_spoofing_attack(self):
-      if self.attack_arp_spoofing.text() == "ARP SPOOFING":
-         self.arp_attack.set_loop(True)
-         self.attack_arp_spoofing.setText("STOP")
-         self.terminal.clear()
-         threading.Thread(target=self.arp_attack.run(), args=()).start()
 
-      elif self.attack_arp_spoofing.text() == "STOP":
-         self.attack_arp_spoofing.setText("ARP SPOOFING")
-         self.arp_attack.stop()
+   def arp_spoofing_attack(self):
+         if not self.arp_attack_worker:
+            self.arp_attack_worker = SofiaArpSpoofAttack(self.append_log, True)
+            runnable = WorkerRunnable(self.arp_attack_worker)
+            self.threadpool.start(runnable)
+            self.terminal.clear()
+            self.attack_arp_spoofing.setText("Stop Attack")
+         else:
+            self.arp_attack_worker.loop = False
+            self.append_log("Waiting for the ttack to finish ...")
+            import time
+            while not self.arp_attack_worker.done:
+               time.sleep(1)
+            self.attack_arp_spoofing.setText("ARP SPOOFING")
+            self.arp_attack_worker = None
+            self.append_log("Attack is done")
+
+   # def on_arp_attack_finished(self):
+   #    self.arp_attack_worker.mutex.lock()
+   #    self.arp_attack_worker.condition.wakeAll()
+   #    self.arp_attack_worker.mutex.unlock()
+   #    self.arp_thread.quit()
+   #    self.arp_thread.wait()
+   #    self.arp_attack_worker.deleteLater()
+   #    self.attack_arp_spoofing.setText("START")
 
    def arp_spoofing_detection(self):
       print("START DNS SPOOFING")
@@ -302,5 +325,5 @@ class SofiaCyberTestSingleton:
       terminal.setText(log)
    
 if __name__ == '__main__':
-   sofia_app = SofiaCyberTestSingleton()
+   sofia_app = SofiaCyberTest()
    sofia_app.run()
