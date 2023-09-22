@@ -50,6 +50,7 @@ from qt_material import *
 from attack.ARP_SPOOFING_attack import SofiaArpSpoofAttack
 from attack.DNS_SPOOFING import SofiaDnsSpoofingAttack
 from detection.ARP_SPOOFING_detection import SofiaArpSpoofingDetect
+from detection.DNS_SPOOFING_detection import SofiaDnsSpoofingDetect
 
 class WorkerRunnable(QRunnable):
     def __init__(self, worker):
@@ -157,24 +158,6 @@ class SofiaCyberTest:
       self.detection_arp_spoofing.move(self.second_row, self.second_column[0])
       self.detection_arp_spoofing.clicked.connect(self.arp_spoofing_detection)
 
-      self.detection_first_wifi = QPushButton(self.widget)
-      self.detection_first_wifi.setText("Deauthentication\nWifi")
-      self.detection_first_wifi.resize(160, 50)
-      self.detection_first_wifi.move(self.second_row, self.second_column[3])
-      self.detection_first_wifi.clicked.connect(self.Deauthentification_Wifi_detection)
-
-      self.detection_second_wifi = QPushButton(self.widget)
-      self.detection_second_wifi.setText("RTS/CTS")
-      self.detection_second_wifi.resize(150, 50)
-      self.detection_second_wifi.move(self.second_row, self.second_column[4])
-      self.detection_second_wifi.clicked.connect(self.RTS_CTS_detection)
-
-      self.detection_dos = QPushButton(self.widget)
-      self.detection_dos.setText("DOS")
-      self.detection_dos.resize(150, 50)
-      self.detection_dos.move(self.second_row, self.second_column[2])
-      self.detection_dos.clicked.connect(self.DOS_detection)
-
       self.terminal.setText(self.log)
       self.terminal.resize(700,450)
       self.terminal.move(self.first_row+190, self.second_column[0])
@@ -189,6 +172,7 @@ class SofiaCyberTest:
       self.arp_attack_worker = None
       self.dns_attack_worker = None
       self.arp_attack_detector = None
+      self.dns_attack_detector = None
 
       self.hostDict = {b"google.com.": "192.168.1.161", b"facebook.com.": "192.168.1.161"}
       self.queueNum = 1
@@ -214,18 +198,22 @@ class SofiaCyberTest:
             self.threadpool.start(runnable)
             self.attack_dns_spoofing.setText("STOP")
          else:
-            self.stop_arp_spoofing()
-            self.attack_dns_spoofing.setText("DNS SPOOFING")
+            self.stop("DNS Spoofing", self.dns_attack_worker, self.attack_dns_spoofing, "DNS SPOOFING")
+            self.dns_attack_worker = None
 
    def dns_spoofing_detection(self):
-      print("START DNS SPOOFING")
-      #cmd = "python3 ./dns_attack.py"
-      #log=subprocess.run(cmd, shell=True)
-      cmd=subprocess.Popen('python3 ./detection/DNS_SPOOFING_detection.py', shell=True, stdout=subprocess.PIPE, )
-      log=cmd.communicate()[0]
-      log=log.decode("utf-8")
-      print(log)
-      terminal.setText(log)
+      self.append_log(f"Worker: {self.dns_attack_detector}")
+      if not self.dns_attack_detector:
+         self.terminal.clear()
+
+         self.dns_attack_detector = SofiaDnsSpoofingDetect(self.append_log, True)
+         runnable = WorkerRunnable(self.dns_attack_detector)
+         self.threadpool.start(runnable)
+
+         self.detection_dns_spoofing.setText("STOP")
+      else:
+         self.stop("DNS Detection", self.dns_attack_detector, self.detection_dns_spoofing, "DNS SPOOFING")
+         self.dns_attack_detector = None
 
    def arp_spoofing_attack(self):
       if not self.arp_attack_worker:
