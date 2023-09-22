@@ -183,10 +183,10 @@ class SofiaCyberTest:
       # Define attacks
       self.threadpool = QThreadPool()
       self.arp_attack_worker = None
+      self.dns_attack_worker = None
 
-      self.hostDict = {b"google.com.": "192.168.56.1", b"facebook.com.": "192.168.56.1"}
+      self.hostDict = {b"google.com.": "192.168.1.161", b"facebook.com.": "192.168.1.161"}
       self.queueNum = 1
-      self.dns_attack = SofiaDnsSpoofingAttack(self.hostDict, self.queueNum, self.append_log)
 
    def refresh(self):
       self.app.processEvents()
@@ -200,22 +200,17 @@ class SofiaCyberTest:
       sys.exit(self.app.exec_())
 
    def dns_spoofing_attack(self):
-      import time
-      if self.attack_dns_spoofing.text() == "DNS SPOOFING":
-         if self.attack_arp_spoofing.text() != "STOP":
-            self.append_log("You need to start ARP attack first !")
-         else:
+      if not self.arp_attack_worker:
+         self.append_log("[DNS] You need to start ARP Spoofing first!")
+      else:
+         if not self.dns_attack_worker:
+            self.dns_attack_worker = SofiaDnsSpoofingAttack(self.hostDict, self.queueNum, self.append_log, True)
+            runnable = WorkerRunnable(self.dns_attack_worker)
+            self.threadpool.start(runnable)
             self.attack_dns_spoofing.setText("STOP")
-            self.append_log("[+] Starting ARP Spoofing attack for MITM ..")
-            self.dns_attack.run()
-            #threading.Thread(target=self.dns_attack.run(), args=()).start()
-
-      elif self.attack_dns_spoofing.text() == "STOP":
-         self.append_log("Stopping DNS attack ......")
-         self.attack_dns_spoofing.setText("DNS SPOOFING")
-         # Stop ARP first
-         self.arp_attack.stop()
-         # Stop DNS
+         else:
+            self.stop_arp_spoofing()
+            self.attack_dns_spoofing.setText("DNS SPOOFING")
 
    def dns_spoofing_detection(self):
       print("START DNS SPOOFING")
@@ -229,29 +224,25 @@ class SofiaCyberTest:
 
    def arp_spoofing_attack(self):
          if not self.arp_attack_worker:
+            self.terminal.clear()
+
             self.arp_attack_worker = SofiaArpSpoofAttack(self.append_log, True)
             runnable = WorkerRunnable(self.arp_attack_worker)
             self.threadpool.start(runnable)
-            self.terminal.clear()
-            self.attack_arp_spoofing.setText("Stop Attack")
-         else:
-            self.arp_attack_worker.loop = False
-            self.append_log("Waiting for the ttack to finish ...")
-            import time
-            while not self.arp_attack_worker.done:
-               time.sleep(1)
-            self.attack_arp_spoofing.setText("ARP SPOOFING")
-            self.arp_attack_worker = None
-            self.append_log("Attack is done")
 
-   # def on_arp_attack_finished(self):
-   #    self.arp_attack_worker.mutex.lock()
-   #    self.arp_attack_worker.condition.wakeAll()
-   #    self.arp_attack_worker.mutex.unlock()
-   #    self.arp_thread.quit()
-   #    self.arp_thread.wait()
-   #    self.arp_attack_worker.deleteLater()
-   #    self.attack_arp_spoofing.setText("START")
+            self.attack_arp_spoofing.setText("STOP")
+         else:
+            self.stop_arp_spoofing()
+
+   def stop_arp_spoofing(self):
+      self.arp_attack_worker.loop = False
+      self.append_log("Waiting for the ARP attack to finish ...")
+      import time
+      while not self.arp_attack_worker.done:
+         time.sleep(1)
+      self.attack_arp_spoofing.setText("ARP SPOOFING")
+      self.arp_attack_worker = None
+      self.append_log("Attack is done")
 
    def arp_spoofing_detection(self):
       print("START DNS SPOOFING")

