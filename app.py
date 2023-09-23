@@ -52,6 +52,7 @@ from attack.DNS_SPOOFING import SofiaDnsSpoofingAttack
 from detection.ARP_SPOOFING_detection import SofiaArpSpoofingDetect
 from detection.DNS_SPOOFING_detection import SofiaDnsSpoofingDetect
 from attack.Deauthentification_Wifi_attack import SofiaDeauthAttack
+from attack.rts import SofiaRTSAttack
 
 class WorkerRunnable(QRunnable):
     def __init__(self, worker):
@@ -129,22 +130,16 @@ class SofiaCyberTest:
       self.attack_arp_spoofing.move(self.first_row, self.first_colomn[0])
       self.attack_arp_spoofing.clicked.connect(self.arp_spoofing_attack)
 
-      self.attack_dos = QPushButton(self.widget)
-      self.attack_dos.setText("DOS")
-      self.attack_dos.resize(150, 50)
-      self.attack_dos.move(self.first_row, self.first_colomn[2])
-      self.attack_dos.clicked.connect(self.DOS_attack)
-
       self.deuath_attack_wifi = QPushButton(self.widget)
       self.deuath_attack_wifi.setText("Deauthentication\nWifi")
       self.deuath_attack_wifi.resize(160, 50)
-      self.deuath_attack_wifi.move(self.first_row, self.first_colomn[3])
+      self.deuath_attack_wifi.move(self.first_row, self.first_colomn[2])
       self.deuath_attack_wifi.clicked.connect(self.Deauthentification_Wifi_attack)
 
       self.rts_cts_attack_wifi = QPushButton(self.widget)
       self.rts_cts_attack_wifi.setText("RTS/CTS")
       self.rts_cts_attack_wifi.resize(150, 50)
-      self.rts_cts_attack_wifi.move(self.first_row, self.first_colomn[4])
+      self.rts_cts_attack_wifi.move(self.first_row, self.first_colomn[3])
       self.rts_cts_attack_wifi.clicked.connect(self.RTS_CTS_attack)
 
       self.detection_dns_spoofing = QPushButton(self.widget)
@@ -175,7 +170,7 @@ class SofiaCyberTest:
       self.arp_attack_detector = None
       self.dns_attack_detector = None
 
-      self.hostDict = {b"google.com.": "192.168.1.161", b"facebook.com.": "192.168.1.161"}
+      self.hostDict = {b"google.com.": "192.168.43.201", b"facebook.com.": "192.168.43.201"}
       self.queueNum = 1
 
    def refresh(self):
@@ -184,6 +179,7 @@ class SofiaCyberTest:
    def append_log(self, text):
       self.terminal.append(text)
       self.refresh()
+      self.terminal.verticalScrollBar().setValue(self.terminal.verticalScrollBar().maximum())
 
    def run(self):
       self.widget.show()
@@ -197,7 +193,7 @@ class SofiaCyberTest:
             self.dns_attack_worker = SofiaDnsSpoofingAttack(self.hostDict, self.queueNum, self.append_log, True)
             runnable = WorkerRunnable(self.dns_attack_worker)
             self.threadpool.start(runnable)
-            self.attack_dns_spoofing.setText("STOP")
+            self.attack_dns_spoofing.setText("STOP DNS")
          else:
             self.stop("DNS Spoofing", self.dns_attack_worker, self.attack_dns_spoofing, "DNS SPOOFING")
             self.dns_attack_worker = None
@@ -224,10 +220,13 @@ class SofiaCyberTest:
          runnable = WorkerRunnable(self.arp_attack_worker)
          self.threadpool.start(runnable)
 
-         self.attack_arp_spoofing.setText("STOP")
+         self.attack_arp_spoofing.setText("STOP ARP")
       else:
          self.stop("ARP Attack", self.arp_attack_worker, self.attack_arp_spoofing, "ARP SPOOFING")
          self.arp_attack_worker = None
+         if self.dns_attack_worker:
+            self.stop("DNS Spoofing", self.dns_attack_worker, self.attack_dns_spoofing, "DNS SPOOFING")
+            self.dns_attack_worker = None
 
    def stop(self, job, worker, button, text):
       worker.loop = False
@@ -257,13 +256,8 @@ class SofiaCyberTest:
       deauth.run()
 
    def RTS_CTS_attack(self):
-      self.append_log("RTS CTS Attack ...")
-
-   def DOS_attack(self):
-      self.append_log("DOS Attack ...")
-
-   def DOS_detection(self):
-      self.append_log("DOS Detection ...")
+      rts_attack = SofiaRTSAttack(self.append_log)
+      rts_attack.main()
    
 if __name__ == '__main__':
    sofia_app = SofiaCyberTest()

@@ -22,12 +22,15 @@ class SofiaDnsSpoofingAttack(QObject):
 		os.system(
 			f'iptables -I FORWARD -j NFQUEUE --queue-num {self.queueNum}')
 		self.queue.bind(self.queueNum, self.callBack)
-		try:
-			self.queue.run()
-		except KeyboardInterrupt:
-			os.system(
-				f'iptables -D FORWARD -j NFQUEUE --queue-num {self.queueNum}')
-			self.append_log("[!] iptable rule flushed")
+		
+		while self.loop:
+			self.queue.run(block=False)
+
+		self.finished.emit()
+		self.done = True
+		os.system(
+			f'iptables -D FORWARD -j NFQUEUE --queue-num {self.queueNum}')
+		self.append_log("[!] iptable rule flushed")
 
 	def callBack(self, packet):
 		scapyPacket = IP(packet.get_payload())

