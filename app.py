@@ -51,6 +51,7 @@ from attack.ARP_SPOOFING_attack import SofiaArpSpoofAttack
 from attack.DNS_SPOOFING import SofiaDnsSpoofingAttack
 from detection.ARP_SPOOFING_detection import SofiaArpSpoofingDetect
 from detection.DNS_SPOOFING_detection import SofiaDnsSpoofingDetect
+from attack.Deauthentification_Wifi_attack import SofiaDeauthAttack
 
 class WorkerRunnable(QRunnable):
     def __init__(self, worker):
@@ -134,17 +135,17 @@ class SofiaCyberTest:
       self.attack_dos.move(self.first_row, self.first_colomn[2])
       self.attack_dos.clicked.connect(self.DOS_attack)
 
-      self.first_attack_wifi = QPushButton(self.widget)
-      self.first_attack_wifi.setText("Deauthentication\nWifi")
-      self.first_attack_wifi.resize(160, 50)
-      self.first_attack_wifi.move(self.first_row, self.first_colomn[3])
-      self.first_attack_wifi.clicked.connect(self.Deauthentification_Wifi_attack)
+      self.deuath_attack_wifi = QPushButton(self.widget)
+      self.deuath_attack_wifi.setText("Deauthentication\nWifi")
+      self.deuath_attack_wifi.resize(160, 50)
+      self.deuath_attack_wifi.move(self.first_row, self.first_colomn[3])
+      self.deuath_attack_wifi.clicked.connect(self.Deauthentification_Wifi_attack)
 
-      self.second_attack_wifi = QPushButton(self.widget)
-      self.second_attack_wifi.setText("RTS/CTS")
-      self.second_attack_wifi.resize(150, 50)
-      self.second_attack_wifi.move(self.first_row, self.first_colomn[4])
-      self.second_attack_wifi.clicked.connect(self.RTS_CTS_attack)
+      self.rts_cts_attack_wifi = QPushButton(self.widget)
+      self.rts_cts_attack_wifi.setText("RTS/CTS")
+      self.rts_cts_attack_wifi.resize(150, 50)
+      self.rts_cts_attack_wifi.move(self.first_row, self.first_colomn[4])
+      self.rts_cts_attack_wifi.clicked.connect(self.RTS_CTS_attack)
 
       self.detection_dns_spoofing = QPushButton(self.widget)
       self.detection_dns_spoofing.setText("DNS SPOOFING")
@@ -252,65 +253,17 @@ class SofiaCyberTest:
          self.arp_attack_detector = None
 
    def Deauthentification_Wifi_attack(self):
-      print("DOS")
-
-      cmd=subprocess.Popen('python3 ./attack/Deauthentification_Wifi_attack.py', shell=True, stdout=subprocess.PIPE, )
-      log=cmd.communicate()[0]
-      log=log.decode("utf-8")
-      terminal.setText(log)
-
-   def Deauthentification_Wifi_detection(self):
-      print("DOS")
-
-      cmd=subprocess.Popen('python3 ./detection/Deauthentification_Wifi_detection.py', shell=True, stdout=subprocess.PIPE, )
-      log=cmd.communicate()[0]
-      log=log.decode("utf-8")
-      terminal.setText(log)
+      deauth = SofiaDeauthAttack(self.append_log)
+      deauth.run()
 
    def RTS_CTS_attack(self):
-
-      cmd=subprocess.Popen('python3 ./attack/RTS_CTS_attack.py', shell=True, stdout=subprocess.PIPE, )
-      log=cmd.communicate()[0]
-      log=log.decode("utf-8")
-      terminal.setText(log)
-
-   def RTS_CTS_detection(self):
-      
-      cmd=subprocess.Popen('python3 ./detection/RTS_CTS_detection.py', shell=True, stdout=subprocess.PIPE, )
-      log=cmd.communicate()[0]
-      log=log.decode("utf-8")
-      terminal.setText(log)
+      self.append_log("RTS CTS Attack ...")
 
    def DOS_attack(self):
-
-      cmd=subprocess.Popen('python3 ./attack/DOS_attack.py', shell=True, stdout=subprocess.PIPE, )
-      log=cmd.communicate()[0]
-      log=log.decode("utf-8")
-      terminal.setText(log)
+      self.append_log("DOS Attack ...")
 
    def DOS_detection(self):
-      print("DDOS")
-      #cmd = "python3 ./ddos_attack.py"
-      cmd=subprocess.Popen('python3 ./detection/DOS_detection.py', shell=True, stdout=subprocess.PIPE, )
-      log=cmd.communicate()[0]
-      log=log.decode("utf-8")
-      terminal.setText(log)
-
-   def men_in_the_middle_attack(self):
-      print("MEN in the middle")
-      #cmd = "python3 ./middle_attack.py"
-      cmd=subprocess.Popen('python3 ./attack/MITM_attack.py', shell=True, stdout=subprocess.PIPE, )
-      log=cmd.communicate()[0]
-      log=log.decode("utf-8")
-      terminal.setText(log)
-
-   def men_in_the_middle_detection(self):
-      print("MEN in the middle")
-      #cmd = "python3 ./middle_attack.py"
-      cmd=subprocess.Popen('python3 ./detection/MITM_detection.py', shell=True, stdout=subprocess.PIPE, )
-      log=cmd.communicate()[0]
-      log=log.decode("utf-8")
-      terminal.setText(log)
+      self.append_log("DOS Detection ...")
    
 if __name__ == '__main__':
    sofia_app = SofiaCyberTest()
